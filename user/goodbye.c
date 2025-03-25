@@ -3,8 +3,7 @@
 #include "user/user.h"
 
 int
-main(int argc, char *argv[])
+main(void)
 {
-  write(1, "Hello World xv6\n", 16);
-  exit(0);
+  exit(0, "Goodbye World xv6\n");
 }

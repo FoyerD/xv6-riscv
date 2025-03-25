@@ -10,5 +10,5 @@ main(int argc, char *argv[])
   printf("%d\n", memsize());
   free(buffer);
   printf("%d\n", memsize());
-  exit(0);
+  exit(0, "");
 }
