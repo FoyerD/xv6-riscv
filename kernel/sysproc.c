@@ -12,7 +12,7 @@ sys_exit(void)
   int n;
   char exit_msg[32];
   argint(0, &n);
-  argstr(1, exit_msg, 32);
+  argstr(1, exit_msg, MAX_EXIT_MSG);
   exit(n, exit_msg);
   return 0;  // not reached
 }

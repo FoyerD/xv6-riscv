@@ -6,6 +6,8 @@
         "riscv.h": "c",
         "defs.h": "c",
         "stat.h": "c",
-        "user.h": "c"
+        "user.h": "c",
+        "file.h": "c",
+        "fcntl.h": "c"
     },
 }

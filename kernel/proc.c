@@ -365,7 +365,7 @@ exit(int status, char* exit_msg)
   end_op();
   p->cwd = 0;
   if (exit_msg){
-    memmove(p->exit_msg, exit_msg, strlen(exit_msg) + 1);
+    memmove(p->exit_msg, exit_msg, MAX_EXIT_MSG);
   }
 
   acquire(&wait_lock);
