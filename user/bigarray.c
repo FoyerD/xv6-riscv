@@ -13,6 +13,9 @@ main(int argc, char *argv[])
   int num_killed;
   int statuses[64];
   int res = 0;
+  int start;
+  int end;
+  int sum;
 
   int bigarray[BIGARRAY_LEN];
   for (i = 0; i < BIGARRAY_LEN; i++){
@@ -30,6 +33,27 @@ main(int argc, char *argv[])
       exit(1, "");
     }
   }
+  else {
+    int start = (pid - 1) * (BIGARRAY_LEN / num_forks);
+    int end = start + (BIGARRAY_LEN / num_forks);
+    int sum = 0;
+
+    for (i = start; i < end; i++) {
+      sum += bigarray[i];
+    }
+
+    printf("Partial sum from process %d: %d\n", pid, sum);
+    exit(sum, "");
+  }
+
+  if (pid == 0) {
+    int total_sum = 0;
+    for (i = 0; i < num_forks; i++) {
+      total_sum += statuses[i];
+    }
+    printf("Total sum: %d\n", total_sum);
+  }
+
 
   exit(0, "");
 }
