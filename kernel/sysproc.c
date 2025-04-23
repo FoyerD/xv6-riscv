@@ -99,3 +99,19 @@ sys_memsize(void)
 {
   return myproc()->sz;
 }
+
+uint64
+sys_forkn(void)
+{
+  int n;
+  uint64 pids;
+  argint(0, &n);
+  argaddr(1, &pids);
+  return forkn(n, (int*)pids);
+}
+
+uint64
+sys_waitall(void)
+{
+
+}

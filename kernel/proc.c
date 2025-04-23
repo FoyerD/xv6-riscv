@@ -325,6 +325,72 @@ fork(void)
   return pid;
 }
 
+int
+forkn(int n, int* pids)
+{
+  int i, pid;
+  struct proc **np;
+  struct proc *curr_p;
+  struct proc *p = myproc();
+  if (n <= 0 || n > 16){
+    return -1;
+  }
+  //Allocate pointers for n processes.
+  np = (struct proc **)malloc(n*sizeof(struct proc *));
+  if(np == 0){
+    return -1;
+  }
+
+  // Allocate processes.
+  for(i = 0; i < n; i++){
+    if((np[i] = allocproc()) == 0){
+      for(int j = 0; j < i; j++){
+        freeproc(np[j]);
+      }
+      free(np);
+      return -1;
+    }
+  }
+
+  // Copy user memory from parent to child.
+  for(i = 0; i < n; i++){
+    if(uvmcopy(p->pagetable, np[i]->pagetable, p->sz) < 0){
+      for(int j = 0; j < n; j++){
+        freeproc(np[j]);
+      }
+      free(np);
+      return -1;
+    }
+    np[i]->sz = p->sz;
+    // copy saved user registers.
+    *(np[i]->trapframe) = *(p->trapframe);
+    // Cause fork to return i in the child.
+    np[i]->trapframe->a0 = i;
+    // increment reference counts on open file descriptors.
+    for(int j = 0; j < NOFILE; j++)
+      if(p->ofile[j])
+        np[i]->ofile[j] = filedup(p->ofile[j]);
+    np[i]->cwd = idup(p->cwd);
+    safestrcpy(np[i]->name, p->name, sizeof(p->name));
+    pid = np[i]->pid;
+    pids[i] = pid;
+
+    acquire(&wait_lock);
+    np[i]->parent = p;
+    release(&wait_lock);
+
+    acquire(&np[i]->lock);
+    np[i]->state = RUNNABLE;
+
+    copyout(p->pagetable, (uint64)(pids+i), (char*)&(np[i]->pid), sizeof(int));
+  }
+
+  for(i = 0; i < n; i++){
+    release(&np[i]->lock);
+  }
+  return pid;
+}
+
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.
 void
