@@ -329,25 +329,19 @@ int
 forkn(int n, int* pids)
 {
   int i, pid;
-  struct proc **np;
+  struct proc* np[n*sizeof(struct proc *)];
   struct proc *curr_p;
   struct proc *p = myproc();
   if (n <= 0 || n > 16){
     return -1;
   }
-  //Allocate pointers for n processes.
-  np = (struct proc **)malloc(n*sizeof(struct proc *));
-  if(np == 0){
-    return -1;
-  }
-
+  
   // Allocate processes.
   for(i = 0; i < n; i++){
     if((np[i] = allocproc()) == 0){
       for(int j = 0; j < i; j++){
         freeproc(np[j]);
       }
-      free(np);
       return -1;
     }
   }
@@ -358,7 +352,6 @@ forkn(int n, int* pids)
       for(int j = 0; j < n; j++){
         freeproc(np[j]);
       }
-      free(np);
       return -1;
     }
   }
@@ -397,7 +390,7 @@ int
 waitall(int* n, int* statuses)
 {
   struct proc *pp;
-  int havekids, pid;
+  int havekids;
   struct proc *p = myproc();
   int i = 0;
   int dead_kids = 0;
