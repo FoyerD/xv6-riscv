@@ -361,11 +361,14 @@ forkn(int n, int* pids)
       free(np);
       return -1;
     }
+  }
+
+  for(i = 0; i < n; i++){
     np[i]->sz = p->sz;
     // copy saved user registers.
     *(np[i]->trapframe) = *(p->trapframe);
-    // Cause fork to return i in the child.
-    np[i]->trapframe->a0 = i;
+    // Cause fork to return i+1 in the child.
+    np[i]->trapframe->a0 = i+1;
     // increment reference counts on open file descriptors.
     for(int j = 0; j < NOFILE; j++)
       if(p->ofile[j])
@@ -379,16 +382,71 @@ forkn(int n, int* pids)
     np[i]->parent = p;
     release(&wait_lock);
 
-    acquire(&np[i]->lock);
-    np[i]->state = RUNNABLE;
-
     copyout(p->pagetable, (uint64)(pids+i), (char*)&(np[i]->pid), sizeof(int));
   }
 
   for(i = 0; i < n; i++){
+    acquire(&np[i]->lock);
+    np[i]->state = RUNNABLE;
     release(&np[i]->lock);
   }
   return pid;
+}
+
+int
+waitall(int* n, int* statuses)
+{
+  struct proc *pp;
+  int havekids, pid;
+  struct proc *p = myproc();
+  int i = 0;
+  int dead_kids = 0;
+  int temp_statuses[NPROC];
+  for(i = 0; i < NPROC; i++){
+    temp_statuses[i] = -1;
+  }
+
+
+  acquire(&wait_lock);
+
+  for(;;){
+    // Scan through table looking for exited children.
+    havekids = 0;
+    for(pp = proc; pp < &proc[NPROC]; pp++){
+      if(pp->parent == p){
+        // make sure the child isn't still in exit() or swtch().
+        acquire(&pp->lock);
+
+        havekids = 1;
+        if(pp->state == ZOMBIE){
+          // Found one.
+          pid = pp->pid;
+          statuses[dead_kids] = pp->xstate;
+          release(&pp->lock);
+          dead_kids++;
+        }
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    if(!havekids){
+      if(n != 0 && copyout(p->pagetable, n, (char *)dead_kids,
+                                  sizeof(int)) < 0) {
+            release(&wait_lock);
+            return -1;
+      }
+      if(dead_kids > 0 && statuses != 0 && copyout(p->pagetable, statuses, (char *)temp_statuses,
+                                  sizeof(int)*NPROC) < 0) {
+            release(&wait_lock);
+            return -1;
+      }
+      release(&wait_lock);
+      return 0;
+    }
+    
+    // Wait for a child to exit.
+    sleep(p, &wait_lock);  //DOC: wait-sleep
+  }
 }
 
 // Pass p's abandoned children to init.
