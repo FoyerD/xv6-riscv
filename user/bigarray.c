@@ -7,12 +7,16 @@ int
 main(int argc, char *argv[])
 {
   int i;
-  int num_forks = 8;
+  int num_forks = 4;
   int pids[num_forks];
   int pid;
   int num_killed;
   int statuses[64];
   int res = 0;
+  int total_sum = 0;
+  int start = 0;
+  int end = 0;
+  int sum = 0;
 
 
   pid = forkn(num_forks, pids);
@@ -26,9 +30,9 @@ main(int argc, char *argv[])
     }
   }
   else {
-    int start = (pid - 1) * (BIGARRAY_LEN / num_forks);
-    int end = start + (BIGARRAY_LEN / num_forks);
-    int sum = 0;
+    start = (pid - 1) * (BIGARRAY_LEN / num_forks);
+    end = start + (BIGARRAY_LEN / num_forks);
+    sum = 0;
 
     for (i = start; i < end; i++) {
       sum += i;
@@ -39,10 +43,10 @@ main(int argc, char *argv[])
   }
 
   if (pid == 0) {
-    int total_sum = 0;
     for (i = 0; i < num_forks; i++) {
       total_sum += statuses[i];
     }
+    printf("Killed %d processes\n", num_killed);
     printf("\nTotal sum: %d\n", total_sum);
   }
 
