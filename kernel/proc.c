@@ -411,14 +411,20 @@ waitall(int* n, int* statuses)
         havekids = 1;
         if(pp->state == ZOMBIE){
           // Found one.
-          statuses[dead_kids] = pp->xstate;
-          release(&pp->lock);
+          temp_statuses[dead_kids] = pp->xstate;
           dead_kids++;
+          freeproc(pp);
+          havekids = 0;
         }
+        release(&pp->lock);
       }
     }
 
-    // No point waiting if we don't have any children.
+    //( No point waiting if we don't have any children.
+    if(killed(p)){
+      release(&wait_lock);
+      return -1;
+    }
     if(!havekids){
       if(n != 0 && copyout(p->pagetable, (uint64)n, (char*)&dead_kids, sizeof(int)) < 0) {
             release(&wait_lock);
@@ -595,7 +601,7 @@ scheduler(void)
 // and have changed proc->state. Saves and restores
 // intena because intena is a property of this
 // kernel thread, not this CPU. It should
-// be proc->intena and proc->noff, but that would
+// be proc->intena  and proc->noff, but that would
 // break in the few places where a lock is held but
 // there's no process.
 void
