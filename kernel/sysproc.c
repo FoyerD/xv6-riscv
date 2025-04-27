@@ -115,7 +115,7 @@ sys_waitall(void)
 {
   uint64 n;
   uint64 statuses;
-  argint(0, &n);
+  argaddr(0, &n);
   argaddr(1, &statuses);
-  return forkn((int*)n, (int*)statuses);
+  return waitall((int*)n, (int*)statuses);
 }

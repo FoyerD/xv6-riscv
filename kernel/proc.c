@@ -330,7 +330,6 @@ forkn(int n, int* pids)
 {
   int i, pid;
   struct proc* np[n*sizeof(struct proc *)];
-  struct proc *curr_p;
   struct proc *p = myproc();
   if (n <= 0 || n > 16){
     return -1;
@@ -413,7 +412,6 @@ waitall(int* n, int* statuses)
         havekids = 1;
         if(pp->state == ZOMBIE){
           // Found one.
-          pid = pp->pid;
           statuses[dead_kids] = pp->xstate;
           release(&pp->lock);
           dead_kids++;
@@ -423,12 +421,11 @@ waitall(int* n, int* statuses)
 
     // No point waiting if we don't have any children.
     if(!havekids){
-      if(n != 0 && copyout(p->pagetable, n, (char *)dead_kids,
-                                  sizeof(int)) < 0) {
+      if(n != 0 && copyout(p->pagetable, (uint64)n, (char*)&dead_kids, sizeof(int)) < 0) {
             release(&wait_lock);
             return -1;
       }
-      if(dead_kids > 0 && statuses != 0 && copyout(p->pagetable, statuses, (char *)temp_statuses,
+      if(dead_kids > 0 && statuses != 0 && copyout(p->pagetable, (uint64)statuses, (char *)temp_statuses,
                                   sizeof(int)*NPROC) < 0) {
             release(&wait_lock);
             return -1;

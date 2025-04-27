@@ -8,14 +8,11 @@ main(int argc, char *argv[])
 {
   int i;
   int num_forks = 4;
-  int* pids[4];
+  int pids[4];
   int pid;
   int num_killed;
   int statuses[64];
   int res = 0;
-  int start;
-  int end;
-  int sum;
 
   int bigarray[BIGARRAY_LEN];
   for (i = 0; i < BIGARRAY_LEN; i++){

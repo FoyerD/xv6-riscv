@@ -9,6 +9,7 @@
         "user.h": "c",
         "file.h": "c",
         "fcntl.h": "c",
-        "syscall.h": "c"
+        "syscall.h": "c",
+        "proc.h": "c"
     },
 }
