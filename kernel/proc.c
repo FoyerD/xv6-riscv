@@ -328,34 +328,33 @@ fork(void)
 int
 forkn(int n, int* pids)
 {
-  int i, pid;
+  int i;
   struct proc* np[n*sizeof(struct proc *)];
   struct proc *p = myproc();
+  int temp_pids[n];
   if (n <= 0 || n > 16){
     return -1;
   }
   
-  // Allocate processes.
+
   for(i = 0; i < n; i++){
     if((np[i] = allocproc()) == 0){
       for(int j = 0; j < i; j++){
         freeproc(np[j]);
+        release(&np[j]->lock);
       }
       return -1;
     }
-  }
 
-  // Copy user memory from parent to child.
-  for(i = 0; i < n; i++){
     if(uvmcopy(p->pagetable, np[i]->pagetable, p->sz) < 0){
-      for(int j = 0; j < n; j++){
+      for(int j = 0; j <= i; j++){
         freeproc(np[j]);
+        release(&np[j]->lock);
       }
       return -1;
     }
-  }
 
-  for(i = 0; i < n; i++){
+
     np[i]->sz = p->sz;
     // copy saved user registers.
     *(np[i]->trapframe) = *(p->trapframe);
@@ -367,22 +366,22 @@ forkn(int n, int* pids)
         np[i]->ofile[j] = filedup(p->ofile[j]);
     np[i]->cwd = idup(p->cwd);
     safestrcpy(np[i]->name, p->name, sizeof(p->name));
-    pid = np[i]->pid;
-    pids[i] = pid;
-
+    temp_pids[i] = np[i]->pid;
+    
+    release(&(np[i]->lock));
     acquire(&wait_lock);
     np[i]->parent = p;
     release(&wait_lock);
-
-    copyout(p->pagetable, (uint64)(pids+i), (char*)&(np[i]->pid), sizeof(int));
   }
+
+  copyout(p->pagetable, (uint64)(pids), (char*)(temp_pids), sizeof(int) * n);
 
   for(i = 0; i < n; i++){
-    acquire(&np[i]->lock);
+    acquire(&(np[i]->lock));
     np[i]->state = RUNNABLE;
-    release(&np[i]->lock);
+    release(&(np[i]->lock));
   }
-  return pid;
+  return 0;
 }
 
 int
